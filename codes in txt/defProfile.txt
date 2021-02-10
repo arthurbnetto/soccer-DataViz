@@ -1,0 +1,134 @@
+
+
+defProfile<-function(dfDefense, time)
+{
+
+	allDef<-dfDefense%>%
+	mutate(place = ifelse(grepl("B", position), "BACK", 
+		ifelse(grepl("MF", position), "MID", "FWD")))%>%
+	group_by(team)%>%
+		mutate(nplayers=n_distinct(player))%>%
+	ungroup()%>%
+	group_by(team, place)%>%
+		summarise(
+			defDuels = sum(defDuels90*(minutes/90)/matches*11/nplayers),
+			aerialDuels =sum(aerialDuels*(minutes/90)/matches*11/nplayers),
+			shotsBlock= sum(shotsBlock90*(minutes/90)/matches*11/nplayers),
+			interceptions = sum(interceptions90*(minutes/90)/matches*11/nplayers),
+			totalDefPlace = sum(defDuels, aerialDuels, shotsBlock, interceptions))%>%
+	ungroup()%>%
+	filter(team != "Flamengo U20")%>%
+	filter(team != "Vasco da Gama U20")%>%
+	filter(team != "")%>%
+	group_by(team)%>%
+		mutate(totalDef = sum(totalDefPlace))%>%
+		mutate(totalDefDuels = sum(defDuels))%>%
+		mutate(totalShotsBlock= sum(shotsBlock))%>%
+		mutate(totalInterceptions= sum(interceptions))%>%
+		mutate(totalAerial = sum(aerialDuels))%>%
+	ungroup()%>%
+		mutate(
+			rankDef= dense_rank(desc(totalDef)),
+			rankDuels= dense_rank(desc(totalDefDuels)),
+			rankBlock= dense_rank(desc(totalShotsBlock)),
+			rankInterceptions= dense_rank(desc(totalInterceptions)),
+			rankAerial= dense_rank(desc(totalAerial)))%>%
+	arrange(desc(totalDef))
+
+
+	#allDef$team<-factor(allDef$team, levels = allDef$team[seq(1,60,3)])
+	#allDef$place<-factor(allDef$place, levels = c("FWD","MID","BACK"))
+
+	#############################################################################################
+
+	allDef2<-allDef%>%
+		select(team, totalDefDuels, totalShotsBlock, totalInterceptions, totalAerial)%>%
+		distinct(team, .keep_all = TRUE)
+	colnames(allDef2)<-c("team", "Def Duels", "Shots Block", "Interceptions", "Aerial Duels")
+	allDef2<-allDef2%>%
+		gather(team)
+	colnames(allDef2)<-c("stat", "value")
+	allDef2$team<-rep(allDef$team[seq(1,60,3)],4) 
+
+	#############################################################################################
+
+	allDef$team<-iconv(str_replace_all(tolower(allDef$team), fixed(" "), ""),from="UTF-8",to="ASCII//TRANSLIT")
+	allDef2$team<-iconv(str_replace_all(tolower(allDef2$team), fixed(" "), ""),from="UTF-8",to="ASCII//TRANSLIT")
+
+	allDef2<-allDef2%>%
+		filter(team==time)
+	allDef<-allDef%>%
+		filter(team==time, place=="FWD")
+
+	allDef2$valor<-round(allDef2$value, digits=0)
+
+	allDef2$value<-round(100*allDef2$value/sum(allDef2$value), digits=1)
+
+	#############################################################################################
+
+	plot<-ggplot(allDef2) +
+		
+		geom_rect(aes(xmin=0, xmax=allDef2[1,2][[1]], ymax=allDef2[1,2][[1]],ymin=0),  fill="#3B506A", color="white", alpha=0.5)+
+		geom_label(aes( x=0, y=allDef2[1,2][[1]], label=paste(allDef2[1,2][[1]], "%")), vjust=0,hjust=0, fill="#3B506A", color="white", family="Century Gothic")+
+
+		geom_rect(aes(xmin=-allDef2[2,2][[1]], xmax=0, ymax=0,ymin=-allDef2[2,2][[1]]),  fill="#D8E0E9", color="white", alpha=0.5)+
+		geom_label(aes( x=0, y=-allDef2[2,2][[1]], label=paste(allDef2[2,2][[1]], "%")), vjust=1,hjust=1, fill="#D8E0E9", color="white", family="Century Gothic")+
+
+		geom_rect(aes(xmin=0, xmax=allDef2[3,2][[1]], ymax=0,ymin=-allDef2[3,2][[1]]),  fill="#173B3B", color="white", alpha=0.5)+
+		geom_label(aes( x=0, y=-allDef2[3,2][[1]], label=paste(allDef2[3,2][[1]], "%")), vjust=1,hjust=0, fill="#173B3B", color="white", family="Century Gothic")+
+
+		geom_rect(aes(xmin=-allDef2[3,2][[1]], xmax=0, ymax=allDef2[3,2][[1]],ymin=0),  fill="#5BBFBF", color="white", alpha=0.5)+
+		geom_label(aes( x=0, y=allDef2[3,2][[1]], label=paste(allDef2[4,2][[1]], "%")), vjust=0,hjust=1, fill="#5BBFBF", color="white", family="Century Gothic")+
+
+		geom_segment(aes(x=-50, xend=50, y=0,yend=0),  color="#49111C", alpha=0.5, linetype="dashed")+
+
+		geom_segment(aes(x=0, xend=0, y=-50,yend=50),  color="#49111C", alpha=0.5, linetype="dashed")+
+
+		geom_text(aes(x=-60, y=0, label="Proporção das Ações\n Defensivas no Time"), angle=90, size=4, color = "#3b506a", family="Century Gothic")+
+
+		coord_fixed()+
+
+		geom_rect(aes(xmin=0, xmax=50, ymax=115,ymin=105),  fill="white", color="#3B506A")+
+		geom_rect(aes(xmin=0+(abs(allDef$rankDef-20)*2.5), xmax=0+(abs(allDef$rankDef-21)*2.5), ymax=115,ymin=105),  fill="#3B506A", color="white")+
+		geom_label(aes( x=0, y=110, label="Ações Defensivas Totais"), vjust=0.5,hjust=1, fill="white", color="#3B506A", family="Century Gothic")+
+		
+
+		geom_rect(aes(xmin=-50, xmax=0, ymax=100,ymin=90),  fill="#3B506A", color="white")+
+		geom_rect(aes(xmin=-50+(abs(allDef$rankDuels-20)*2.5), xmax=-50+(abs(allDef$rankDuels-21)*2.5), ymax=100,ymin=90),  fill="white", color="#3B506A")+
+		geom_label(aes( x=0, y=95, label="Duelos Defensivos"), vjust=0.5,hjust=0, fill="#3B506A", color="white", family="Century Gothic")+
+
+		geom_rect(aes(xmin=-50, xmax=0, ymax=90,ymin=80),  fill="#D8E0E9", color="white")+
+		geom_rect(aes(xmin=-50+(abs(allDef$rankBlock-20)*2.5), xmax=-50+(abs(allDef$rankBlock-21)*2.5), ymax=90,ymin=80),  fill="white", color="#D8E0E9")+
+		geom_label(aes( x=0, y=85, label="Chutes Bloqueados"), vjust=0.5,hjust=0, fill="#D8E0E9", color="white", family="Century Gothic")+
+
+		geom_rect(aes(xmin=-50, xmax=0, ymax=80,ymin=70),  fill="#173B3B", color="white")+
+		geom_rect(aes(xmin=-50+(abs(allDef$rankInterceptions-20)*2.5), xmax=-50+(abs(allDef$rankInterceptions-21)*2.5), ymax=80,ymin=70),  fill="white", color="#173B3B")+
+		geom_label(aes(x=0, y=75, label="Interceptações"), vjust=0.5,hjust=0, fill="#173B3B", color="white", family="Century Gothic")+
+
+		geom_rect(aes(xmin=-50, xmax=0, ymax=70,ymin=60),  fill="#5BBFBF", color="white")+
+		geom_rect(aes(xmin=-50+(abs(allDef$rankAerial-20)*2.5), xmax=-50+(abs(allDef$rankAerial-21)*2.5), ymax=70,ymin=60),  fill="white", color="#5BBFBF")+
+		geom_label(aes( x=0, y=65, label="Duelos Aéreos"), vjust=0.5,hjust=0, fill="#5BBFBF", color="white", family="Century Gothic")+
+
+		geom_text(aes(x=60, y=87.5, label="Classificação (ações por jogo) entre\nos times da competição"), angle=270, size=4, color = "#3b506a", family="Century Gothic")+
+
+		#geom_rect(aes(xmin=-50, xmax=50, ymax=50,ymin=-50),  fill=NA, color="black")+
+		#geom_rect(aes(xmin=-50, xmax=50, ymax=50,ymin=100),  fill=NA, color="black")+
+
+		  	theme_void()+
+  	theme(	legend.position="none",
+		plot.title = ggplot2::element_text(hjust = 0.5, size = 20, color = "#3b506a", family="Century Gothic"),
+		plot.subtitle = ggplot2::element_text(hjust = 0.5, size = 12, color = "#5BBFBF" , family="Century Gothic"),
+		plot.caption = element_text(size=10, hjust=1, color = "#5BBFBF" , family="Century Gothic"))+
+
+  	ggtitle("Qual o Perfil Defensivo?", subtitle="Classificação* e Proporções**")+ 
+  	labs(caption ="*Classificação de quantidade de ações do time comparando com todos os times da competição\n **Proporção de cada uma das ações no total de ações ofensivas da equipe")
+
+return(plot)
+}
+
+
+defProfile(defense, "internacional")
+defProfile(defense, "atleticomineiro")
+		
+
+

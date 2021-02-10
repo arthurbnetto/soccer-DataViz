@@ -1,0 +1,61 @@
+#############################################################################################
+#############################################################################################
+#############################################################################################
+
+playerDensity<-function(df, vec_stats, names, playerName, barColor)
+{
+
+	table<-df%>%
+		select(all_of(vec_stats))%>%
+		distinct(player, .keep_all = TRUE)
+	colnames(table)<-c("player", names)
+	table<-table%>%
+		melt(id.vars = 'player', variable.name = 'stats')%>%
+		group_by(stats)%>%
+		mutate(m=max(value), media=mean(value))
+	highlight<-table%>%
+		filter(player == playerName)
+
+
+	my_breaks <- function(x) round(seq(0, max(x), length = 6),digits=2)[1:5]
+
+	dens<-ggplot()+
+		geom_rect(data=highlight, aes(xmin = 0, ymin = 0, xmax = value, ymax = 1.05), fill=barColor)+
+
+		geom_vline(data=highlight, aes(xintercept=value),color="#3b506a", linetype="dashed")+
+		geom_text(data=highlight, aes(x=value, y=0, label="\u25B2"), size=10, vjust=1, family="Arial Unicode MS",color="#3b506a",)+
+
+		geom_density(data=table, aes(x=value, y=..scaled..),fill="white", alpha=0.7,,inherit.aes = FALSE)+
+
+		#geom_hline(data=table,aes(yintercept=0),color="#3b506a", linetype="solid")+
+
+		scale_x_continuous(breaks=my_breaks)+
+		ylim(-0.1,NA)+
+		facet_wrap(~stats, scales="free_x", ncol=1, strip.position="left")+ 
+
+	 	ggtitle("CF", subtitle="Percentil em densidade*")+
+  		labs(caption = "*Dados comparativos com base\n em todos jogadores da competição")+
+
+		theme_datafute_density()+
+		theme(strip.text.y.left = element_text(angle = 0,hjust=1))
+dens
+}
+
+#############################################################################################
+################################ TESTES ############################################
+#############################################################################################
+
+stats<-c("player", "drib90", "boxTouches", "progRun", "attActions", "shotsTarget", "goalConv",
+		"fouls90", "aerialDuelsWon",
+		"passesAccuracy", "passLength",
+		"xA.x", "preAssistPasses")
+
+names<-c("Drible\npor 90 min", "Toques na área", "\nCorridas\n progressivas", "Ações no\nAtaque",
+			"Chutes em gol", "Gols Conv. (%)", "Faltas Cometidas", "Vitórias Aéreas",
+			"Acertos Passe (%)", "Dist. Média\n Passes", "xA", "Passes Pré-Assistência")
+
+playerDensity(tudo, stats, names, "G. Cano", vasco)
+playerDensity(tudo, stats, names, "V. Cuesta", internacional)
+
+
+	 

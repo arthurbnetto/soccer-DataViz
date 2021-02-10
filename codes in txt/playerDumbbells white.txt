@@ -1,0 +1,162 @@
+
+#########################################################################################################################################
+#########################################################################################################################################
+#########################################################################################################################################
+#########################################################################################################################################
+#########################################################################################################################################
+
+playerDumbbells<-function(df, players, vec_stats, labels, n.stats.atq=9, n.stats.def=6, n.stats.pas=15,  
+		title, fill.color=c("black", "brown"))
+{
+
+	dados<-selector(df, players, vec_stats)
+
+	colnames(dados)<-c("player", labels)
+	table<-melt(dados,  id.vars = 'player', variable.name = 'stats')%>%
+		mutate(value=value+1)
+
+	table[1:18, 4] <- "ataque"
+	table[19:30,4] <- "defesa"
+	table[31:60,4] <- "passe"
+
+	table<-table%>%arrange(player, V4, value)
+	table$stats<-factor(table$stats, levels = table$stats[1:(nrow(table)/2)])
+	table<-table%>%arrange(stats, V4)%>%mutate(id=row_number())
+	table[seq(2,nrow(table),2),5] = table[seq(2,nrow(table),2),5]-1
+
+	table<-tidyr::spread(table, player, value)%>%
+		mutate(id=row_number())
+	name1<-toupper(colnames(table)[4])
+	name2<-toupper(colnames(table)[5])
+	colnames(table)<-c("stats", "V4", "id", "player1", "player2")
+	table<-table%>%
+		mutate(segColor=ifelse(player1>player2, "player1", "player2"))%>%
+		mutate(star=ifelse(player1>player2, player1, player2))
+
+	intercalado<-data.frame(xminimo=seq(2, (n.stats.atq+n.stats.def+n.stats.pas), 2)-0.45, 
+				xmaximo=seq(2, (n.stats.atq+n.stats.def+n.stats.pas), 2)+0.43, 
+				yminimo=rep(-0.79,(n.stats.atq+n.stats.def+n.stats.pas)/2),
+				ymaximo=rep(0.79,(n.stats.atq+n.stats.def+n.stats.pas)/2))
+
+	dots<-data.frame(yminimo=c(2:11), 
+				xminimo=rep(0.6,10),
+				xmaximo=rep((n.stats.atq+n.stats.def+n.stats.pas)+0.4,10))
+
+	bigLabels<-table %>% 
+		group_by(segColor, V4) %>%
+		summarise(totalStars = n())
+
+	bigStar<-spread(bigLabels, segColor,totalStars)%>%
+		mutate(star=ifelse(player1>player2, "player1", "player2"))
+
+	plot<-ggplot(table) +  
+
+		geom_rect(aes(xmin=0.55, xmax=n.stats.atq+0.45, ymin=0.8, ymax=11.2), fill=NA, color="#3B506A", alpha=0.5) +
+		geom_rect(aes(xmin = n.stats.atq+0.55, ymin = 0.8, xmax = n.stats.atq+n.stats.def+0.45, ymax = 11.2), fill=NA, color="#3B506A", alpha=0.5) +
+		geom_rect(aes(xmin = n.stats.atq+n.stats.def+0.55, ymin = 0.8, xmax = n.stats.atq+n.stats.def+n.stats.pas+0.45, ymax = 11.2), fill=NA, color="#3B506A", alpha=0.5) +
+
+		geom_rect(aes(xmin=0.55, xmax=n.stats.atq+0.45, ymin=-0.8, ymax=1), fill=NA, color="#3B506A", alpha=0.5) +
+		geom_rect(aes(xmin = n.stats.atq+0.55, ymin = -0.8, xmax = n.stats.atq+n.stats.def+0.45, ymax = 1), fill=NA, color="#3B506A", alpha=0.5) +
+		geom_rect(aes(xmin = n.stats.atq+n.stats.def+0.55, ymin = -0.8, xmax = n.stats.atq+n.stats.def+n.stats.pas+0.45, ymax = 1), fill=NA, color="#3B506A", alpha=0.5) +
+
+  		geom_segment(aes(x=id, xend=id, y=round(player1,digits=1), yend=round(player2, digits=1)), color="#3B506A", alpha=0.6)+
+
+		geom_label(aes(x=id, y=round(player1,digits=1)+0.02, label=abs(round(player1,digits=1))-1), 
+			color="white", size=3, fontface="bold",angle= 0, fill=fill.color[1],family = "Century Gothic")+
+		geom_label(aes(x=id, y=round(player2,digits=1)+0.02, label=abs(round(player2,digits=1))-1), 
+			color="white", size=3, fontface="bold",angle= 0, fill=fill.color[2],family = "Century Gothic")+
+
+		geom_label(aes(x=-1, y=4.6, label=name1), 
+			color="white", size=5, angle= 0, fill=fill.color[1],family = "Century Gothic",alpha=0.5)+
+		geom_label(aes(x=-1, y=6.6, label=name2), 
+			color="white", size=5, angle= 0, fill=fill.color[2],family = "Century Gothic",alpha=0.7)+
+
+		geom_text(aes(x=id, y=0.9, label="\u2605", color=as.character(segColor)), 
+				 size= 5, inherit.aes = FALSE, vjust=0.2)+
+
+		scale_color_manual(values = c(fill.color, "#3B506A"))+
+
+
+  		annotate("text", x = c(1.05,(n.stats.atq)+1.05,(n.stats.atq+n.stats.def)+1.05), 
+			y = c(11.7,11.7,11.7), 
+			label = c(bigLabels[1,3],
+					bigLabels[2,3],
+					bigLabels[3,3]),
+		 	 hjust=0.5, vjust=1, family = "Century Gothic", color= "#3B506A")+
+
+  		annotate("text", x = c(1.05,(n.stats.atq)+1.05,(n.stats.atq+n.stats.def)+1.05), 
+			y = c(11.911,11.919,11.919), 
+			label = c(bigLabels[4,3],
+					bigLabels[5,3],
+					bigLabels[6,3] ),
+		 	 hjust=0.5, vjust=1, family = "Century Gothic", color= "#3B506A")+
+
+
+
+  		annotate("text", x = c(1.05,(n.stats.atq)+1.05,(n.stats.atq+n.stats.def)+1.05), 
+			y = c(11.3,11.3,11.3), 
+			label = c("ATQ", "DEF", "PAS"),
+		 	angle=90, hjust=0.5, vjust=1, family = "Century Gothic", color= "#3B506A")+
+
+
+		geom_rect(data=intercalado, aes(xmin = xminimo, ymin = yminimo, xmax = xmaximo, ymax = ymaximo), fill="#5BBFBF", inherit.aes = FALSE)+
+
+  		geom_text(data=table,aes(x=id, y=0, label=stats),
+			#color="#2C2A4A", 
+			color="#3B506A", 
+			size=4, #fontface="bold",
+			angle= 0,
+			lineheight = .7,
+			inherit.aes = FALSE,family = "Century Gothic")+
+
+
+		geom_segment(data=dots, aes(x = xminimo, y = yminimo, xend = xmaximo, yend = yminimo), color="#5bbfbf", alpha=0.8,linetype="dotted",inherit.aes = FALSE)+
+
+  		geom_text(data=bigStar, aes(x = c(1.63,(n.stats.atq)+1.63,(n.stats.atq+n.stats.def)+1.63), 
+			y = c(11.7,11.7,11.7), 
+			label = c("\u2605",
+					"\u2605",
+					"\u2605")),
+		 	 hjust=0.5, vjust=1, family = "Century Gothic", color= fill.color[1]) +
+
+  		geom_text(data=bigStar, aes(x = c(1.63,(n.stats.atq)+1.63,(n.stats.atq+n.stats.def)+1.63), 
+			y = c(11.919,11.919,11.919), 
+			label = c("\u2605",
+					"\u2605",
+					"\u2605")),
+		 	 hjust=0.5, vjust=1, family = "Century Gothic", color= fill.color[2]) +
+
+		coord_flip() +
+
+  		ggtitle(title, subtitle="Comparação de Percentil de Habilidade*")+
+  		labs(caption = "Percentil de Habilidade criado com base em todos jogadores da competição\nDados: Wyscout")+
+	
+		theme_datafute_bar_white()
+
+	plot
+}
+
+
+
+#########################################################################################################################################
+#########################################################################################################################################
+#########################################################################################################################################
+#########################################################################################################################################
+#########################################################################################################################################
+
+
+vector_stats<-c("player", "progRun", "boxTouches", "drib90", "attActions", "xG90", "head90", "shots90", "shotsTarget", "goalConv", 
+		"def90", "defDuelsWon", "aerialDuelsWon", "shotsBlock90", "padjInterception", "fouls90",
+		"xA90.x", "assist", "assist90", "crosses90", "finalThirdPasses90", "thruPassesAcc", "passes90", "passesAccuracy", "passLength", "lngPasses90", "lngPassesAcc", "longPassLength", "fwdPasses90", "backPasses90", "latPasses90")
+
+names<-c("Corridas\nProgressivas", "Toques na\nÁrea", "Drible\n(90 min)", "Ações no\nAtaque", "xG 90", "Cebeçadas\n(90 min)", "Chutes\n(90 min)", "Acerto\nem gol(%)", "Chutes\nConvertidos (%)", 
+		"Ações Def\n(90 min)", "Vitórias\nDefensivas", "Vitórias\nAéreas", "Chutes\nBloq. (90 min)", "Interceptações\n(pAdj)", "Faltas\n(90 min)",
+		"xA\n(90 min)", "Assistências\n(Total)", "Assistências\n(90 min)", "Cruzamentos\n(90 min)", "Passes\nTerço Final", "Enfiadas", "Passes\n(90 min)", "Acerto de\nPasses (%)", "Dist. Média\n Passe (m)", "Passes Long.\n (90 min)", "Acertos Pas.\nLongos (%)", "Dist. Média\nPasse Lng. (m)", "Passes para\nFrente (90 min)", "Passes para\nTrás (90 min)", "Passes para\nLado(90 min)")
+
+
+plot<-playerDumbbells(tudo, c("G. Cano", "Gabriel Barbosa"), vector_stats, names, n.stats.atq=9, n.stats.def=6, n.stats.pas=15,  
+		"Cano x Gabigol", fill.color=c("black", "red"))
+
+
+#ggsave("dumbbells.png", width = 29, height = 29, units = "cm")
+

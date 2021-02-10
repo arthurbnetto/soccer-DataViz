@@ -1,0 +1,144 @@
+
+#https://stackoverflow.com/questions/34522732/changing-fonts-in-ggplot2
+#library(extrafont)
+#loadfonts(device = "win")
+
+#' @export
+theme_datafute_radar <- function (bw=FALSE) 
+{ 
+    	ggplot2::theme_bw() + 
+	ggplot2::theme(	plot.background = ggplot2::element_rect(fill = "#5bbfbf", color = "#5bbfbf"),
+			panel.background = ggplot2::element_rect(fill = "#5bbfbf", color = "#5bbfbf"),
+			panel.grid.major = ggplot2::element_blank(),
+			panel.grid.minor = ggplot2::element_blank(),
+			plot.title = ggplot2::element_text(hjust = 0, size = 30, face = "bold", color = "#3b506a"),
+			plot.subtitle = ggplot2::element_text(hjust = 0, size = 12, color = "white"),
+			legend.position="none", legend.direction="horizontal", legend.title = ggplot2::element_blank(),
+			legend.background = ggplot2::element_rect(fill = "#FDFFFC", colour = "#3587A4"),
+			text= ggplot2::element_text(family="Century Gothic", size=15, color = "#3b506a"),
+			axis.ticks = element_blank(),
+			panel.grid = element_blank(),
+			panel.border= element_blank(),
+			axis.text = ggplot2::element_blank(),
+			axis.title = ggplot2::element_blank(),
+			plot.caption = element_text(size=8, hjust=0, color = "white"))
+
+
+}
+
+#' @export
+theme_datafute_scatter <- function (bw=FALSE) 
+{ 
+
+
+    	ggplot2::theme_bw() + 
+	ggplot2::theme(	plot.background = ggplot2::element_rect(fill = "#5bbfbf", color = "#5bbfbf"),
+			panel.background = ggplot2::element_rect(fill = "#5bbfbf", color = "#5bbfbf"),
+			#plot.background = ggplot2::element_rect(fill = "white", color = "white"),
+			#panel.background = ggplot2::element_rect(fill = "white", color = "white"),
+			panel.grid.major = ggplot2::element_line(linetype = "18", color = "white"),
+			panel.grid.minor = ggplot2::element_blank(),
+			plot.title = ggplot2::element_text(hjust = 0.5, size = 20, face = "bold", color = "#3b506a"),
+			plot.subtitle = ggplot2::element_text(hjust = 0.5, size = 15, color = "white"),
+			legend.position="none", legend.direction="horizontal", legend.title = ggplot2::element_blank(),
+			legend.background = ggplot2::element_rect(fill = "#FDFFFC", colour = "#3587A4"),
+			text= ggplot2::element_text(family="Century Gothic", size=15, color = "#3b506a"),
+			panel.border= element_blank(),
+			axis.text = ggplot2::element_text(color = "#3b506a", size = 12),
+			axis.title.x = element_text(color="white", size=16, face="bold"),
+			axis.ticks = element_blank(),
+			axis.title.y = element_text(color="white", size=16, face="bold"))
+
+}
+
+#' @export
+theme_datafute_bar_dark <- function (bw=FALSE) 
+{ 
+    	ggplot2::theme_bw() + 
+	ggplot2::theme(	#plot.background = ggplot2::element_rect(fill = "#5bbfbf", color = "#5bbfbf"),
+			#panel.background = ggplot2::element_rect(fill = "#5bbfbf", color = "#5bbfbf"),
+			#plot.background = ggplot2::element_rect(fill = "white", color = "white"),
+			#panel.background = ggplot2::element_rect(fill = "white", color = "white"),
+			plot.background = ggplot2::element_rect(fill = "#3b506a", color = "#3b506a"),
+			panel.background = ggplot2::element_rect(fill = "#3b506a", color = "#3b506a"),
+			panel.grid.major = ggplot2::element_blank(),
+			#panel.grid.major.x = ggplot2::element_line(colour = "white"),
+			panel.grid.minor = ggplot2::element_blank(),
+			plot.title = ggplot2::element_text(hjust = 0.5, size = 30, face = "bold", color = "white"),
+			plot.subtitle = ggplot2::element_text(hjust = 0.5, size = 12, color = "#5bbfbf"),
+			legend.position="none", legend.direction="horizontal", legend.title = ggplot2::element_blank(),
+			legend.background = ggplot2::element_rect(fill = "#5bbfbf", colour = "#5bbfbf"),
+			text= ggplot2::element_text(family="Century Gothic", size=15, color = "#3b506a"),
+			axis.ticks = element_blank(),
+			panel.grid = element_blank(),
+			panel.border= element_blank(),
+			axis.text = ggplot2::element_blank(),
+			axis.title = ggplot2::element_blank(),
+			plot.caption = element_text(size=8, hjust=0, color = "white"))
+
+
+}
+
+theme_datafute_bar_white <- function (bw=FALSE) 
+{ 
+    	ggplot2::theme_bw() + 
+	ggplot2::theme(	plot.background = ggplot2::element_rect(fill = "white", color = "white"),
+			panel.background = ggplot2::element_rect(fill = "white", color = "white"),
+			panel.grid.major = ggplot2::element_blank(),
+			panel.grid.minor = ggplot2::element_blank(),
+			plot.title = ggplot2::element_text(hjust = 0.5, size = 30, face = "bold", color = "#3b506a"),
+			plot.subtitle = ggplot2::element_text(hjust = 0.5, size = 12, color = "#5bbfbf"),
+			legend.position="none", legend.direction="horizontal", legend.title = ggplot2::element_blank(),
+			legend.background = ggplot2::element_rect(fill = "#5bbfbf", colour = "#5bbfbf"),
+			text= ggplot2::element_text(family="Century Gothic", size=15, color = "#3b506a"),
+			axis.ticks = element_blank(),
+			panel.grid = element_blank(),
+			panel.border= element_blank(),
+			axis.text = ggplot2::element_blank(),
+			axis.title = ggplot2::element_blank(),
+			plot.caption = element_text(size=8, hjust=0, color = "#5bbfbf"))
+
+
+}
+
+#' @export
+theme_datafute_density <- function (bw=FALSE) 
+{ 
+    	ggplot2::theme_void() + 
+	ggplot2::theme(plot.background = ggplot2::element_rect(fill = "#5bbfbf", color = "#5bbfbf"),
+			panel.background = ggplot2::element_rect(fill = "#5bbfbf", color = "#5bbfbf"),
+			strip.text = ggplot2::element_text(family="Century Gothic", size=10, color = "#3b506a"),
+			axis.text.x = element_text(family="Century Gothic", size=8, color = "#3b506a"),
+			plot.title = ggplot2::element_text(hjust = 1, size = 30, face = "bold", color = "#3b506a"),
+			plot.subtitle = ggplot2::element_text(hjust = 1, size = 12, color = "white"),
+			plot.caption = element_text(size=8, hjust=1, color = "white"))
+
+
+}
+
+palmeiras <- "#1e5b3c"
+internacional <- "#d40303"
+flamengo <- "#ff0000"
+vascodagama <- "black"
+vasco <- "black"
+gremio<-"#034791"
+corinthians<-"black"
+fortaleza<-"blue"
+goias<-"green"
+botafogo<-"black"
+redbullbragantino<-"white"
+sportrecife<-"red"
+atleticomineiro<-"black"
+fluminense<-"#9f0028"
+santos<-"white"
+saopaulo<-"#de202c"
+bahia<-"#1d63df"
+ceara<-"black"
+atleticogo<-"#ff0000"
+athleticoparanaense<-"red"
+coritiba<-"green"
+
+
+
+
+

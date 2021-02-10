@@ -1,0 +1,183 @@
+palmeiras <- "#1e5b3c"
+internacional <- "#d40303"
+flamengo <- "#ff0000"
+vascodagama <- "black"
+gremio<-"#034791"
+corinthians<-"black"
+fortaleza<-"#500391"
+goias<-"#04513e"
+botafogo<-"black"
+redbullbragantino<-"white"
+sportrecife<-"#c50502"
+atleticomineiro<-"black"
+fluminense<-"#9f0028"
+santos<-"white"
+saopaulo<-"#de202c"
+bahia<-"#1d63df"
+ceara<-"black"
+atleticogo<-"#ff0000"
+athleticoparanaense<-"#d80518"
+coritiba<-"#048c17"
+
+
+defHeatMap<-function(dfDefense, time)
+{
+
+
+	allDef<-dfDefense%>%
+	mutate(height = ifelse(grepl("B", position), "BACK", 
+		ifelse(grepl("MF", position), "MID", "FWD")))%>%
+	mutate(side = 	
+		ifelse((grepl("L", position) & grepl("R", position) & grepl("C", position)), "ALL", 
+		ifelse((grepl("L", position) & grepl("R", position)), "BOTH", 
+		ifelse(grepl("L", position), "LEFT", 
+		ifelse(grepl("R", position), "RIGHT", "CENTER")))))%>%
+	mutate(place =
+
+		ifelse(side == "ALL" & height == "FWD", "ALL_FWD", 
+		ifelse(side == "ALL" & height == "MID", "ALL_MID",
+		ifelse(side == "ALL" & height == "BACK", "ALL_BACK", 
+
+		ifelse(side == "BOTH" & height == "FWD", "BOTH_FWD", 
+		ifelse(side == "BOTH" & height == "MID", "BOTH_MID",
+		ifelse(side == "BOTH" & height == "BACK", "BOTH_BACK", 
+
+		ifelse(side == "LEFT" & height == "FWD", "LEFT_FWD", 
+		ifelse(side == "LEFT" & height == "MID", "LEFT_MID",
+		ifelse(side == "LEFT" & height == "BACK", "LEFT_BACK",
+		ifelse(side == "RIGHT" & height == "FWD", "RIGHT_FWD", 
+		ifelse(side == "RIGHT" & height == "MID", "RIGHT_MID",
+		ifelse(side == "RIGHT" & height == "BACK", "RIGHT_BACK",
+		ifelse(side == "CENTER" & height == "FWD", "CENTER_FWD", 
+		ifelse(side == "CENTER" & height == "MID", "CENTER_MID", "CENTER_BACK")))))))))))))))%>%
+	group_by(team, place)%>%
+		summarise(
+			defDuels = sum(defDuels90*(minutes/90)/matches),
+			aerialDuels =sum(aerialDuels*(minutes/90)/matches),
+			shotsBlock= sum(shotsBlock90*(minutes/90)/matches),
+			interceptions = sum(interceptions90*(minutes/90)/matches),
+			totalDefPlace = sum(defDuels, aerialDuels, shotsBlock, interceptions))%>%
+	ungroup()%>%
+	filter(team != "Flamengo U20")%>%
+	filter(team != "Vasco da Gama U20")%>%
+	filter(team != "")%>%
+	group_by(team)%>%
+		mutate(totalDef = sum(totalDefPlace))%>%
+		mutate(totalDefDuels = sum(defDuels))%>%
+		mutate(totalShotsBlock= sum(shotsBlock))%>%
+		mutate(totalInterceptions= sum(interceptions))%>%
+		mutate(totalAerial = sum(aerialDuels))%>%
+	ungroup()
+
+
+	teamOrder<-allDef%>%
+		filter(place=="CENTER_FWD")%>%
+		arrange(desc(totalDef))
+	teamOrder<-teamOrder$team
+	allDef$team<-factor(allDef$team, levels = teamOrder)
+	allDef$place<-factor(allDef$place, levels = c("LEFT_BACK",  "CENTER_BACK", "RIGHT_BACK",
+							"LEFT_MID", "CENTER_MID", "RIGHT_MID",
+							"LEFT_FWD",  "CENTER_FWD", "RIGHT_FWD",
+							"BOTH_BACK","BOTH_MID", "BOTH_FWD",
+							"ALL_BACK","ALL_MID", "ALL_FWD"))
+
+
+	allDef<-allDef %>%
+		full_join(expand(allDef, team, place))%>%
+		replace(., is.na(.), 0)%>%
+		arrange(team, place)
+
+	allDef$team<-iconv(str_replace_all(tolower(allDef$team), fixed(" "), ""),from="UTF-8",to="ASCII//TRANSLIT")
+
+	allDef<-allDef%>%
+		filter(team==time)
+
+	#Criação de distribuições noramis ficticias por posição em campo (proporcionais as suas verdadeiras participações nas ações ofenssivas)
+
+	bothback<-ifelse(is.na(floor(allDef[10,7]/allDef[10,8]*1000)[1,1]), 0, floor(allDef[10,7]/allDef[10,8]*1000)[1,1])/2
+	bothmid<-ifelse(is.na(floor(allDef[11,7]/allDef[11,8]*1000)[1,1]), 0, floor(allDef[11,7]/allDef[11,8]*1000)[1,1])/2
+	bothfwd<-ifelse(is.na(floor(allDef[12,7]/allDef[12,8]*1000)[1,1]), 0, floor(allDef[12,7]/allDef[12,8]*1000)[1,1])/2
+
+	allback<-ifelse(is.na(floor(allDef[13,7]/allDef[13,8]*1000)[1,1]), 0, floor(allDef[13,7]/allDef[13,8]*1000)[1,1])/3
+	allmid<-ifelse(is.na(floor(allDef[14,7]/allDef[14,8]*1000)[1,1]), 0, floor(allDef[14,7]/allDef[14,8]*1000)[1,1])/3
+	allfwd<-ifelse(is.na(floor(allDef[15,7]/allDef[15,8]*1000)[1,1]), 0, floor(allDef[15,7]/allDef[15,8]*1000)[1,1])/3
+
+	lback<-ifelse(is.na(floor(allDef[1,7]/allDef[1,8]*1000)[1,1]), 0, floor(allDef[1,7]/allDef[1,8]*1000)[1,1])+bothback+allback
+	cback<-ifelse(is.na(floor(allDef[2,7]/allDef[2,8]*1000)[1,1]), 0, floor(allDef[2,7]/allDef[2,8]*1000)[1,1])+allback
+		rback<-ifelse(is.na(floor(allDef[3,7]/allDef[3,8]*1000)[1,1]), 0, floor(allDef[3,7]/allDef[3,8]*1000)[1,1])+bothback+allback
+	lmid<-ifelse(is.na(floor(allDef[4,7]/allDef[4,8]*1000)[1,1]), 0, floor(allDef[4,7]/allDef[4,8]*1000)[1,1])+bothmid+allmid
+	cmid<-ifelse(is.na(floor(allDef[5,7]/allDef[5,8]*1000)[1,1]), 0, floor(allDef[5,7]/allDef[5,8]*1000)[1,1])+allmid
+	rmid<-ifelse(is.na(floor(allDef[6,7]/allDef[6,8]*1000)[1,1]), 0, floor(allDef[6,7]/allDef[6,8]*1000)[1,1])+bothmid+allmid
+	lfwd<-ifelse(is.na(floor(allDef[7,7]/allDef[7,8]*1000)[1,1]), 0, floor(allDef[7,7]/allDef[7,8]*1000)[1,1])+bothfwd+allfwd
+	cfwd<-ifelse(is.na(floor(allDef[8,7]/allDef[8,8]*1000)[1,1]), 0, floor(allDef[8,7]/allDef[8,8]*1000)[1,1])+allfwd
+	rfwd<-ifelse(is.na(floor(allDef[9,7]/allDef[9,8]*1000)[1,1]), 0, floor(allDef[9,7]/allDef[9,8]*1000)[1,1])+bothfwd+allfwd
+
+	overplot <- tibble(
+  		x = c(rnorm(lback, 0.65,0.3), 
+		rnorm(cback, 1.25,0.3), 
+		rnorm(rback, 1.85, 0.3),
+		rnorm(lmid, 0.65,0.3), 
+		rnorm(cmid, 1.25,0.3), 
+		rnorm(rmid, 1.85,0.3),
+		rnorm(lfwd, 0.65,0.3), 
+		rnorm(cfwd, 1.25,0.3), 
+		rnorm(rfwd, 1.85,0.3)),
+  	y = c(rnorm(lback, 1,0.4), 
+		rnorm(cback, 1,0.4), 
+		rnorm(rback, 1,0.4),
+		rnorm(lmid, 2,0.4), 
+		rnorm(cmid, 2,0.4), 
+		rnorm(rmid, 2,0.4),
+		rnorm(lfwd, 3,0.4), 
+		rnorm(cfwd, 3,0.4), 
+		rnorm(rfwd, 3,0.4))
+	)
+
+
+
+  plot<-ggplot(overplot, aes(x, y)) +
+  	stat_density_2d(aes(fill = ..density..), geom = "raster", contour = FALSE)+
+  	#scale_fill_distiller(palette= "Spectral", direction=-1) +
+	scale_fill_gradient2(low="#004700", mid="yellow", high="red", midpoint=0.16) +
+  	ylim(-0.1,3.6)+
+ 	 xlim(-0.1,2.4)+
+
+  ##desenho campo 
+  	annotate("text", x=1.15, 0.5, label = "\u25e0",size=75, color="white", family="Arial Unicode MS", alpha=0.8)+
+ 	 annotate("text", x=1.15, 3, label = "\u25e1",size=75, color="white", family="Arial Unicode MS", alpha=0.8)+
+  	annotate("text", x=1.15, 1.75, label = "\u25ef",size=75, color="white", family="Arial Unicode MS", alpha=0.8)+
+ 	 annotate("rect", xmin=0, xmax=2.3, ymin=0, ymax=3.5, linetype = "solid", fill=NA, color="white",size=3)+
+  	annotate("segment", x=0.75, xend=1.55, y=0.5, yend=0.5, linetype = "solid", color="white",size=3)+
+  	annotate("segment", x=0.75, xend=1.55, y=3, yend=3, linetype = "solid", color="white", size=3)+
+  	annotate("segment", x=0.75, xend=0.75, y=3, yend=3.5, linetype = "solid", color="white", size=3)+
+  	annotate("segment", x=0.75, xend=0.75, y=0, yend=0.5, linetype = "solid", color="white",  size=3)+
+  	annotate("segment", x=1.55, xend=1.55, y=3, yend=3.5, linetype = "solid", color="white", size=3)+
+  	annotate("segment", x=1.55, xend=1.55, y=0, yend=0.5, linetype = "solid", color="white", size=3)+
+ 	 annotate("segment", x=0, xend=2.3, y=1.75, yend=1.75, linetype = "solid", color="white", size=3)+
+
+  	#annotate("text", x=2.1, 3.3, label = "\u27b2",size=15, color="white", family="Arial Unicode MS", angle=-90)+
+
+  	annotate("text", x=0.2, 0.2, label = "\u27b2",size=15, color="white", family="Arial Unicode MS", angle=90)+
+
+  #tema
+  	theme_void()+
+  	theme(	#plot.background = ggplot2::element_rect(fill = "#3b506a", color = "#3b506a"),
+		#panel.background = ggplot2::element_rect(fill = "#3b506a", color = "#3b506a"),
+		legend.position="none",
+		plot.title = ggplot2::element_text(hjust = 0.5, size = 20, color = "#3b506a", family="Century Gothic"),
+		plot.subtitle = ggplot2::element_text(hjust = 0.5, size = 12, color = "#5BBFBF" , family="Century Gothic"),
+		plot.caption = element_text(size=10, hjust=0, color = "#5BBFBF" , family="Century Gothic"))+
+
+  	ggtitle("Quem realiza as Ações Defensivas?", subtitle="Mapa de Calor*")+ 
+  	labs(caption ="*Densidade esperada de ações defensivas por posição")
+
+return(plot)
+}
+
+defHeatMap(defense, "gremio")
+#atqHeatMap(ataque, "gremio")
+
+
+
+defHeatMap(defense, "atleticomineiro")
+#atqHeatMap(ataque, "atleticomineiro")

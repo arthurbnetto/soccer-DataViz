@@ -1,0 +1,91 @@
+
+physicalProfile<-function(dfGeneral, time)
+{
+
+
+	general2<-dfGeneral%>%
+		group_by(team)%>%
+			summarise(
+				age = mean(age),
+				height = mean(height),
+				weight = mean(weight),
+				imc = weight/(height/100)^2)%>%
+		filter(team!="",
+			team!="Flamengo U20",
+			team!="Vasco da Gama U20")%>%
+		mutate(	rankAge= dense_rank(desc(age)),
+			rankHeight= dense_rank(desc(height)),
+			rankWeight= dense_rank(desc(weight)),
+			rankIMC= dense_rank(desc(imc)))
+
+	general2$tag<-iconv(str_replace_all(tolower(general2$team), fixed(" "), ""),from="UTF-8",to="ASCII//TRANSLIT")
+
+	plot<-ggplot(filter(general2, tag != time), aes(weight/(height/100)^2,age ))+
+
+		geom_point(colour = "#5bbfbf", alpha=0.9)+
+		geom_text_repel(aes(label=team),colour = "#5bbfbf", alpha=0.9)+
+
+		geom_hline(yintercept=mean(general2$age), linetype="dotted", color= "#3b506a")+
+		geom_text(aes(x=25, y=mean(general2$age), label=paste("Média da Liga: ", round(mean(general2$age), digits=1))),colour = "#3b506a", alpha=0.7, vjust=0)+
+		geom_vline(xintercept=mean(general2$imc), linetype="dotted", color= "#3b506a")+
+		geom_text(aes(x=mean(general2$imc), y=28.5, label=paste("Média da Liga: ", round(mean(general2$imc), digits=1))),colour = "#3b506a", alpha=0.7, vjust=0, angle=90)+
+
+		geom_point(data=filter(general2, tag == time), aes(weight/(height/100)^2,age), color= "#3b506a")+
+		geom_label_repel(data=filter(general2, tag == time), aes(weight/(height/100)^2, age,  label=team), size=5, color= "#3b506a", fill="white")+
+
+		geom_image(aes(x=23.85, y=27.5, image="C:/Users/User/Desktop/player_silhouette.png", size=I(height/400), by="height"),color="#3b506a")+
+
+		geom_rect(aes(xmin=24.15, xmax=25.15, ymax=27.94,ymin=27.78),  fill="white", color="#3b506a")+
+		geom_rect(aes(xmin=24.15+(abs(rankHeight-20)*0.05), xmax=24.15+(abs(rankHeight-21)*0.05), ymax=27.94,ymin=27.78),  fill="#3b506a")+
+
+		geom_rect(aes(xmin=24.15, xmax=25.15, ymax=27.69,ymin=27.53),  fill="white", color="#3b506a")+
+		geom_rect(aes(xmin=24.15+(abs(rankWeight-20)*0.05), xmax=24.15+(abs(rankWeight-21)*0.05), ymax=27.69,ymin=27.53),  fill="#3b506a")+
+
+		geom_rect(aes(xmin=24.15, xmax=25.15, ymax=27.44,ymin=27.28),  fill="white", color="#3b506a")+
+		geom_rect(aes(xmin=24.15+(abs(rankIMC-20)*0.05), xmax=24.15+(abs(rankIMC-21)*0.05), ymax=27.44,ymin=27.28),  fill="#3b506a")+
+
+		geom_rect(aes(xmin=24.15, xmax=25.15, ymax=27.19,ymin=27.03),  fill="white", color="#3b506a")+
+		geom_rect(aes(xmin=24.15+(abs(rankAge-20)*0.05), xmax=24.15+(abs(rankAge-21)*0.05), ymax=27.19,ymin=27.03),  fill="#3b506a")+
+
+		geom_label(data=filter(general2, tag == time),aes(x=24.15,y=28, label=paste(round(height, digits=1), " cm"), hjust=0, vjust=1), color="#3b506a", fill="white")+
+		geom_label(data=filter(general2, tag == time),aes(x=24.15,y=27.75, label=paste(round(weight, digits=1), " kg"), hjust=0, vjust=1), color="#3b506a", fill="white")+
+		geom_label(data=filter(general2, tag == time),aes(x=24.15,y=27.5, label=paste(round(imc, digits=1), " IMC"), hjust=0, vjust=1), color="#3b506a", fill="white")+
+		geom_label(data=filter(general2, tag == time),aes(x=24.15,y=27.25, label=paste(round(age, digits=1), " anos"), hjust=0, vjust=1), color="#3b506a", fill="white")+
+
+   		ggplot2::theme_bw() + 
+		ggplot2::theme(	#plot.background = ggplot2::element_rect(fill = "#5bbfbf", color = "#5bbfbf"),
+			#panel.background = ggplot2::element_rect(fill = "#5bbfbf", color = "#5bbfbf"),
+			plot.background = ggplot2::element_rect(fill = "white", color = "white"),
+			panel.background = ggplot2::element_rect(fill = "white", color = "white"),
+			panel.grid.major = ggplot2::element_blank(),
+			panel.grid.minor = ggplot2::element_blank(),
+			plot.title = ggplot2::element_text(hjust = 0.5, size = 20, face = "bold", color = "#3b506a"),
+			plot.subtitle = ggplot2::element_text(hjust = 0.5, size = 15, color = "#5bbfbf"),
+			plot.caption = ggplot2::element_text(hjust = 0, size = 8, color = "#5bbfbf"),
+			legend.position="none", legend.direction="horizontal", legend.title = ggplot2::element_blank(),
+			legend.background = ggplot2::element_rect(fill = "#FDFFFC", colour = "#3587A4"),
+			text= ggplot2::element_text(family="Century Gothic", size=15, color = "#3b506a"),
+			#panel.border= ggplot2::element_rect(linetype = "solid", color = "#3b506a"),
+			panel.border= ggplot2::element_blank(),
+			axis.line= ggplot2::element_line(linetype = "solid", color = "#3b506a", arrow=arrow()),
+			axis.text = ggplot2::element_text(color = "#3b506a", size = 12),
+			axis.title.x = element_text(color="#3b506a", size=16),
+			axis.ticks = element_blank(),
+			axis.title.y = element_text(color="#3b506a", size=16))+
+
+		xlab("IMC")+
+		ylab("Idade")+
+  		ggtitle("Perfil Físico", subtitle="Valores médios por time*")+ 
+  		labs(caption ="*IMC = peso/altura²")
+
+	return(plot)
+}
+
+physicalProfile(general, "gremio")
+
+
+
+
+
+
+

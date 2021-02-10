@@ -1,0 +1,46 @@
+#############################################################################################
+#############################################################################################
+#############################################################################################
+
+playerRadarDens<-function(data.frame, vector_stats, labels_stats, playerSelected,
+		values="NA", n.stats.ataque=6, n.stats.defesa=2, n.stats.passe=4,  
+		justification=c(-0.75,-1.5,-3), titulo, teamColor="black" )
+{
+
+	dados<-selector(data.frame, playerSelected, vector_stats)
+	radar<-playerRadar(dados, valores=values, 
+			n.stats.atq=n.stats.ataque, 
+			n.stats.def=n.stats.defesa, 
+			n.stats.pas=n.stats.passe, 
+			labels=labels_stats, 
+			just=justification, title=titulo, fill.color=teamColor)
+	dens<-playerDensity(data.frame, vector_stats, labels_stats, playerSelected, teamColor)
+	radar+dens
+
+}
+
+#############################################################################################
+################################ TESTES ############################################
+#############################################################################################
+
+stats<-c("player", "drib90", "boxTouches", "progRun", "attActions", "shotsTarget", "goalConv",
+		"fouls90", "aerialDuelsWon",
+		"passesAccuracy", "passLength",
+		"xA.x", "preAssistPasses")
+
+names<-c("Drible\npor 90 min", "Toques na área", "\nCorridas\n progressivas", "Ações no\nAtaque",
+			"Chutes em gol", "Gols Conv. (%)", "Faltas Cometidas", "Vitórias Aéreas",
+			"Acertos Passe (%)", "Dist. Média\n Passes", "xA", "Passes Pré-Assistência")
+
+playerRadarDens(tudo, stats, names, "Maicon",
+		values="NA", n.stats.ataque=6, n.stats.defesa=2, n.stats.passe=4,  
+		justification=c(-0.75,-1.5,-3), "Maicon", teamColor=gremio)
+
+playerRadarDens(tudo, stats, names, "Matheus Henrique",
+		values="NA", n.stats.ataque=6, n.stats.defesa=2, n.stats.passe=4,  
+		justification=c(-0.75,-1.5,-3), "Matheus Henrique", teamColor=gremio)
+
+
+playerRadarDens(tudo, stats, names, "Lucas Silva",
+		values="NA", n.stats.ataque=6, n.stats.defesa=2, n.stats.passe=4,  
+		justification=c(-0.75,-1.5,-3), "Lucas Silva", teamColor=gremio)

@@ -1,0 +1,135 @@
+
+atqProfile<-function(dfAtaque, time)
+{
+	allAtq<-dfAtaque%>%
+	mutate(place = ifelse(grepl("B", position), "BACK", 
+		ifelse(grepl("MF", position), "MID", "FWD")))%>%
+	group_by(team)%>%
+		mutate(nplayers=n_distinct(player))%>%
+	ungroup()%>%
+	group_by(team, place)%>%
+		summarise(
+			progRun = sum(progRun*(minutes/90)/matches*11/nplayers),
+			drib =sum(drib90*(minutes/90)/matches*11/nplayers),
+			boxTouches= sum(boxTouches*(minutes/90)/matches*11/nplayers),
+			crosses = sum(crosses90*(minutes/90)/matches*11/nplayers),
+			totalAtqPlace = sum(progRun, drib, boxTouches, crosses))%>%
+	ungroup()%>%
+	filter(team != "Flamengo U20")%>%
+	filter(team != "Vasco da Gama U20")%>%
+	filter(team != "")%>%
+	group_by(team)%>%
+		mutate(totalAtq = sum(totalAtqPlace))%>%
+		mutate(totalProgRun = sum(progRun))%>%
+		mutate(totalDrib = sum(drib))%>%
+		mutate(totalBoxTouches = sum(boxTouches))%>%
+		mutate(totalCrosses = sum(crosses))%>%
+	ungroup()%>%
+		mutate(
+			rankAtq= dense_rank(desc(totalAtq)),
+			rankRun= dense_rank(desc(totalProgRun)),
+			rankDrib= dense_rank(desc(totalDrib)),
+			rankCrosses= dense_rank(desc(totalCrosses)),
+			rankBox= dense_rank(desc(totalBoxTouches)))%>%
+	arrange(desc(totalAtq))
+
+
+	#allAtq$team<-factor(allAtq$team, levels = allAtq$team[seq(1,60,3)])
+	#allAtq$place<-factor(allAtq$place, levels = c("FWD","MID","BACK"))
+
+
+	#############################################################################################
+
+	allAtq2<-allAtq%>%
+		select(team, totalProgRun, totalDrib, totalBoxTouches, totalCrosses)%>%
+		distinct(team, .keep_all = TRUE)
+	colnames(allAtq2)<-c("team", "Prog Run", "Drib", "Box Touches", "Crosses")
+	allAtq2<-allAtq2%>%
+		gather(team)
+	colnames(allAtq2)<-c("stat", "value")
+	allAtq2$team<-rep(allAtq$team[seq(1,60,3)],4) 
+
+
+	#############################################################################################
+
+	allAtq$team<-iconv(str_replace_all(tolower(allAtq$team), fixed(" "), ""),from="UTF-8",to="ASCII//TRANSLIT")
+	allAtq2$team<-iconv(str_replace_all(tolower(allAtq2$team), fixed(" "), ""),from="UTF-8",to="ASCII//TRANSLIT")
+
+	allAtq2<-allAtq2%>%
+		filter(team==time)
+	allAtq<-allAtq%>%
+		filter(team==time, place=="FWD")
+
+	
+	allAtq2$valor<-round(allAtq2$value, digits=0)
+
+	allAtq2$value<-round(100*allAtq2$value/sum(allAtq2$value), digits=1)
+
+	#############################################################################################
+
+
+	plot<-ggplot(allAtq2) +
+		
+		geom_rect(aes(xmin=0, xmax=allAtq2[1,2][[1]], ymax=allAtq2[1,2][[1]],ymin=0),  fill="#3B506A", color="white", alpha=0.5)+
+		geom_label(aes( x=0, y=allAtq2[1,2][[1]], label=paste(allAtq2[1,2][[1]], "%")), vjust=0,hjust=0, fill="#3B506A", color="white", family="Century Gothic")+
+
+		geom_rect(aes(xmin=-allAtq2[2,2][[1]], xmax=0, ymax=0,ymin=-allAtq2[2,2][[1]]),  fill="#D8E0E9", color="white", alpha=0.5)+
+		geom_label(aes( x=0, y=-allAtq2[2,2][[1]], label=paste(allAtq2[2,2][[1]], "%")), vjust=1,hjust=1, fill="#D8E0E9", color="white", family="Century Gothic")+
+
+		geom_rect(aes(xmin=0, xmax=allAtq2[3,2][[1]], ymax=0,ymin=-allAtq2[3,2][[1]]),  fill="#173B3B", color="white", alpha=0.5)+
+		geom_label(aes( x=0, y=-allAtq2[3,2][[1]], label=paste(allAtq2[3,2][[1]], "%")), vjust=1,hjust=0, fill="#173B3B", color="white", family="Century Gothic")+
+
+		geom_rect(aes(xmin=-allAtq2[3,2][[1]], xmax=0, ymax=allAtq2[3,2][[1]],ymin=0),  fill="#5BBFBF", color="white", alpha=0.5)+
+		geom_label(aes( x=0, y=allAtq2[3,2][[1]], label=paste(allAtq2[4,2][[1]], "%")), vjust=0,hjust=1, fill="#5BBFBF", color="white", family="Century Gothic")+
+
+		geom_segment(aes(x=-50, xend=50, y=0,yend=0),  color="#49111C", alpha=0.5, linetype="dashed")+
+
+		geom_segment(aes(x=0, xend=0, y=-50,yend=50),  color="#49111C", alpha=0.5, linetype="dashed")+
+
+		geom_text(aes(x=-60, y=0, label="Proporção das Ações\n Ofensivas no Time"), angle=90, size=4, color = "#3b506a", family="Century Gothic")+
+
+		coord_fixed()+
+
+		geom_rect(aes(xmin=0, xmax=50, ymax=115,ymin=105),  fill="white", color="#3B506A")+
+		geom_rect(aes(xmin=0+(abs(allAtq$rankAtq-20)*2.5), xmax=0+(abs(allAtq$rankAtq-21)*2.5), ymax=115,ymin=105),  fill="#3B506A", color="white")+
+		geom_label(aes( x=0, y=110, label="Ações Ofensivas Totais"), vjust=0.5,hjust=1, fill="white", color="#3B506A", family="Century Gothic")+
+		
+
+		geom_rect(aes(xmin=-50, xmax=0, ymax=100,ymin=90),  fill="#3B506A", color="white")+
+		geom_rect(aes(xmin=-50+(abs(allAtq$rankRun-20)*2.5), xmax=-50+(abs(allAtq$rankRun-21)*2.5), ymax=100,ymin=90),  fill="white", color="#3B506A")+
+		geom_label(aes( x=0, y=95, label="Corridas Progressivas"), vjust=0.5,hjust=0, fill="#3B506A", color="white", family="Century Gothic")+
+
+		geom_rect(aes(xmin=-50, xmax=0, ymax=90,ymin=80),  fill="#D8E0E9", color="white")+
+		geom_rect(aes(xmin=-50+(abs(allAtq$rankDrib-20)*2.5), xmax=-50+(abs(allAtq$rankDrib-21)*2.5), ymax=90,ymin=80),  fill="white", color="#D8E0E9")+
+		geom_label(aes( x=0, y=85, label="Dribles"), vjust=0.5,hjust=0, fill="#D8E0E9", color="white", family="Century Gothic")+
+
+		geom_rect(aes(xmin=-50, xmax=0, ymax=80,ymin=70),  fill="#173B3B", color="white")+
+		geom_rect(aes(xmin=-50+(abs(allAtq$rankBox-20)*2.5), xmax=-50+(abs(allAtq$rankBox-21)*2.5), ymax=80,ymin=70),  fill="white", color="#173B3B")+
+		geom_label(aes(x=0, y=75, label="Toques na Área"), vjust=0.5,hjust=0, fill="#173B3B", color="white", family="Century Gothic")+
+
+		geom_rect(aes(xmin=-50, xmax=0, ymax=70,ymin=60),  fill="#5BBFBF", color="white")+
+		geom_rect(aes(xmin=-50+(abs(allAtq$rankCrosses-20)*2.5), xmax=-50+(abs(allAtq$rankCrosses-21)*2.5), ymax=70,ymin=60),  fill="white", color="#5BBFBF")+
+		geom_label(aes( x=0, y=65, label="Cruzamentos"), vjust=0.5,hjust=0, fill="#5BBFBF", color="white", family="Century Gothic")+
+
+		geom_text(aes(x=60, y=87.5, label="Classificação (ações por jogo) entre\nos times da competição"), angle=270, size=4, color = "#3b506a", family="Century Gothic")+
+
+		#geom_rect(aes(xmin=-50, xmax=50, ymax=50,ymin=-50),  fill=NA, color="black")+
+		#geom_rect(aes(xmin=-50, xmax=50, ymax=50,ymin=100),  fill=NA, color="black")+
+
+		  	theme_void()+
+  	theme(	legend.position="none",
+		plot.title = ggplot2::element_text(hjust = 0.5, size = 20, color = "#3b506a", family="Century Gothic"),
+		plot.subtitle = ggplot2::element_text(hjust = 0.5, size = 12, color = "#5BBFBF" , family="Century Gothic"),
+		plot.caption = element_text(size=10, hjust=1, color = "#5BBFBF" , family="Century Gothic"))+
+
+  	ggtitle("Qual o Perfil Ofensivo?", subtitle="Classificação* e Proporções**")+ 
+  	labs(caption ="*Classificação de quantidade de ações do time comparando com todos os times da competição\n **Proporção de cada uma das ações no total de ações ofensivas da equipe")
+		
+return(plot)
+}
+
+
+atqProfile(ataque, "gremio")
+atqProfile(ataque, "internacional")
+		
+

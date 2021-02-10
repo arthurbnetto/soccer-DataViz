@@ -1,0 +1,97 @@
+
+shotsProfile<-function(dfAtaque, time)
+{
+	shots<-dfAtaque%>%
+	group_by(team)%>%
+		summarise(
+			goalsMatches = round(sum(goals/matches), digits=2),
+			nonPenal = round(sum(nonPenal/matches), digits=2),
+			xG= sum(xG),
+			shotsMatches = round(sum(shots/matches), digits=1),
+			shotsTarget=round(mean(shotsTarget),digits=1),
+
+			goalsTotal=sum(goals),
+			shotsTotal=sum(shots),
+			shotsTargetTotal= sum(shots*(shotsTarget))/shotsTotal,
+			goalConv = round(100*goalsTotal/shotsTotal, digits=1))%>%
+
+		mutate(
+			shotsOut = 100-shotsTargetTotal-goalConv,
+			rankGoals= dense_rank(desc(goalsTotal)),
+			rankShots= dense_rank(desc(shotsTotal)),
+			rankxG= dense_rank(desc(xG)),
+			rankDif= dense_rank(desc(goalsTotal-xG)),)
+		
+
+	shots$team<-iconv(str_replace_all(tolower(shots$team), fixed(" "), ""),from="UTF-8",to="ASCII//TRANSLIT")
+
+	shots<-shots%>%
+		filter(team == time)
+
+	plot<-ggplot(shots)+
+
+	#goleira
+
+	geom_rect(aes(xmin=6.5,xmax=12, ymax=4,ymin=1),  fill="#3b506a")+
+	geom_rect(aes(xmin=1,xmax=6.5, ymax=4,ymin=1),  fill="#5BBFBF")+
+	geom_rect(aes(xmin=-4.5,xmax=1, ymax=4,ymin=1),  fill="#D8E0E9")+
+
+	geom_segment(aes(x = 1,xend=1, y = 1, yend = 4), size=4)+
+	geom_segment(aes(x = 12,xend=12, y = 1, yend = 4), size=4)+
+	geom_segment(aes(x = 0.9, xend=12.1, y = 4, yend = 4), size=4)+
+
+	#goleiro
+	geom_image(aes(x=5.5, y=2.5, image=paste("C:/Users/User/Desktop/goalkeeper_silhouette.png", sep="")), size=.2)+
+
+	#chutes por jogo
+	geom_point(aes(x=6.5,y=-2), size=2, color="black")+
+	geom_text(aes(x=7.6,y=-2.2, label=paste(shotsMatches, "\nChutes Esperados\npor Jogo")), size=6, color="#3b506a", lineheight=0.8, family="Century Gothic")+
+
+	#chutes em gol
+	geom_curve(aes(x = 6.5, xend=3.3, y = -2, yend = 2.5), arrow=arrow(), size=2, curvature=-.2)+
+	geom_text(aes(x=3.75,y=3.65, label=paste(shotsTargetTotal, "%\nem Gol")), size=6, color="white", family="Century Gothic", lineheight=0.8)+
+
+	#chutes fora
+	geom_curve(aes(x = 6.5, xend=-3, y = -2, yend = 2.75), arrow=arrow(), size=2, curvature=-.3)+
+	geom_text(aes(x=-1.75,y=3.65, label=paste(shotsOut, "%\npara fora")), size=6, color="black", family="Century Gothic", lineheight=0.8)+
+
+	#gols
+	geom_curve(aes(x = 6.5, xend=10.5, y = -2, yend = 2.85), arrow=arrow(), size=2, curvature=.2)+
+	geom_text(aes(x=9.25,y=3.65, label=paste(goalConv, "%\nConvertidos")), size=6, color="white", family="Century Gothic", lineheight=0.8)+
+
+	#dados
+ 	geom_label(aes(x = 13.2, y =3.8, label = paste(goalsTotal, " Gols")), size=6, hjust=0, family="Century Gothic", fill="#3b506a", color="white")+
+ 	geom_label(aes(x = 13.2, y =3, label = paste(xG, " Gols Esperados")), size=6, family="Century Gothic", hjust=0, fill="#3b506a", color="white")+
+ 	geom_label(aes(x = 13.2, y =2.2, label = paste(goalsTotal-xG, "Diferencial")), size=6, hjust=0,family="Century Gothic", fill="#3b506a", color="white")+
+
+	geom_rect(aes(xmin=13.2, xmax=18.2, ymax=3.6,ymin=3.2),  fill="white", color="#3b506a")+
+	geom_rect(aes(xmin=13.2+(abs(rankGoals-20)*0.25), xmax=13.2+(abs(rankGoals-21)*0.25), ymax=3.6,ymin=3.2),  fill="#3b506a")+
+
+	geom_rect(aes(xmin=13.2, xmax=18.2, ymax=2.8,ymin=2.4),  fill="white", color="#3b506a")+
+	geom_rect(aes(xmin=13.2+(abs(rankxG-20)*0.25), xmax=13.2+(abs(rankxG-21)*0.25), ymax=2.8,ymin=2.4),  fill="#3b506a")+
+
+	geom_rect(aes(xmin=13.2, xmax=18.2, ymax=2,ymin=1.6),  fill="white", color="#3b506a")+
+	geom_rect(aes(xmin=13.2+(abs(rankDif-20)*0.25), xmax=13.2+(abs(rankDif-21)*0.25), ymax=2,ymin=1.6),  fill="#3b506a")+
+
+					
+	xlim(-5,20)+
+	ylim(-5,6)+
+	#facet_wrap(~team)+	
+	theme_void() +
+ 	theme(	#plot.background = ggplot2::element_rect(fill = "#3b506a", color = "#3b506a"),
+		#panel.background = ggplot2::element_rect(fill = "#3b506a", color = "#3b506a"),
+		legend.position="none",
+		#strip.text.x = element_blank(),
+		plot.title = ggplot2::element_text(hjust = 0.5, size = 20, color = "#3b506a", family="Century Gothic"),
+		plot.subtitle = ggplot2::element_text(hjust = 0.5, size = 12, color = "#5BBFBF" , family="Century Gothic"),
+		plot.caption = element_text(size=10, hjust=0, color = "#5BBFBF" , family="Century Gothic"))+
+
+  	ggtitle("Perfil de Finalizações") 
+  	#labs(caption ="*Densidade esperada de ações ofensivas por posição")
+
+
+return(plot)
+}
+
+shotsProfile(ataque, "gremio")
+	
